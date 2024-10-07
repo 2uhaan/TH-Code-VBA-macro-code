@@ -1,0 +1,60 @@
+Sub ConvertNewLatLong()
+
+    Dim wsData As Worksheet
+    Dim wsLookup As Worksheet
+    Set wsData = ThisWorkbook.Sheets("Sheet1") ' New data sheet
+    Set wsLookup = ThisWorkbook.Sheets("Sheet2") ' Lookup table with existing codes
+
+    Dim lat As Double
+    Dim longt As Double
+    Dim uniqueCode As String
+    Dim lastRowData As Long
+    Dim lastRowLookup As Long
+    Dim i As Long
+    Dim j As Long
+    Dim codeFound As Boolean
+
+    ' Find the last row of data in new data sheet (Sheet1)
+    lastRowData = wsData.Cells(wsData.Rows.Count, "A").End(xlUp).Row
+    ' Find the last row in lookup table sheet (Sheet2)
+    lastRowLookup = wsLookup.Cells(wsLookup.Rows.Count, "A").End(xlUp).Row
+
+    For i = 2 To lastRowData ' Assuming new data starts at row 2
+
+        ' Get latitude and longitude from Sheet1
+        lat = wsData.Cells(i, 1).Value ' Latitude in column A
+        longt = wsData.Cells(i, 2).Value ' Longitude in column B
+        codeFound = False ' Reset flag for each row
+
+        ' Loop through existing data in Sheet2 to check if lat/long exists
+        For j = 2 To lastRowLookup
+            If wsLookup.Cells(j, 1).Value = lat And wsLookup.Cells(j, 2).Value = longt Then
+                ' If latitude and longitude match, get the existing unique code
+                uniqueCode = wsLookup.Cells(j, 3).Value
+                codeFound = True
+                Exit For
+            End If
+        Next j
+
+        If codeFound Then
+            ' If code is found, reuse it
+            wsData.Cells(i, 3).Value = uniqueCode
+        Else
+            ' If no code is found, generate a new unique code
+            Dim latRounded As String
+            Dim longtRounded As String
+
+            latRounded = Format(Round(lat, 4) * 10000, "000000")
+            longtRounded = Format(Round(longt, 4) * 10000, "000000")
+            uniqueCode = Left(latRounded & longtRounded, 8)
+
+            ' Store the new unique code in Sheet1 and Sheet2
+            wsData.Cells(i, 3).Value = uniqueCode
+            lastRowLookup = lastRowLookup + 1
+            wsLookup.Cells(lastRowLookup, 1).Value = lat ' Store latitude in lookup
+            wsLookup.Cells(lastRowLookup, 2).Value = longt ' Store longitude in lookup
+            wsLookup.Cells(lastRowLookup, 3).Value = uniqueCode ' Store new unique code
+        End If
+    Next i
+
+End Sub
